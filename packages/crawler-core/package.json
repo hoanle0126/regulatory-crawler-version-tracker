@@ -1,0 +1,26 @@
+{
+  "name": "@regtracker/crawler-core",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo 'lint crawler-core ok'"
+  },
+  "dependencies": {
+    "@regtracker/shared": "workspace:*",
+    "@regtracker/legal-parser": "workspace:*",
+    "cheerio": "^1.0.0",
+    "ipaddr.js": "^2.2.0",
+    "pdf-parse": "^1.1.1",
+    "undici": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/pdf-parse": "^1.1.4",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

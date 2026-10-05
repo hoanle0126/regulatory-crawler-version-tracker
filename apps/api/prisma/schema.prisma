@@ -1,0 +1,369 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  VIEWER
+}
+
+enum DocumentStatus {
+  DRAFT_UNKNOWN
+  PUBLISHED
+  NOT_YET_EFFECTIVE
+  EFFECTIVE
+  PARTIALLY_EFFECTIVE
+  AMENDED
+  REPLACED
+  EXPIRED
+  REPEALED
+  UNKNOWN
+}
+
+enum LegalNodeType {
+  DOCUMENT
+  PART
+  CHAPTER
+  SECTION
+  ARTICLE
+  CLAUSE
+  POINT
+  UNCLASSIFIED_BLOCK
+}
+
+enum RelationshipType {
+  AMENDS
+  AMENDED_BY
+  REPLACES
+  REPLACED_BY
+  REPEALS
+  REPEALED_BY
+  REFERENCES
+}
+
+enum ChangeType {
+  ADDED
+  MODIFIED
+  REMOVED
+  MOVED
+  RENAMED
+  UNCHANGED
+}
+
+enum ChangeSetStatus {
+  DETECTED
+  REVIEWED
+  ACKNOWLEDGED
+  IGNORED
+}
+
+enum CrawlRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole  @default(VIEWER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model RegulatorySource {
+  id                String       @id @default(uuid())
+  name              String
+  baseUrl           String
+  adapterType       String       @default("HTML_LISTING")
+  scheduleCron      String?
+  enabled           Boolean      @default(true)
+  timeout           Int          @default(15000)
+  retryLimits       Int          @default(2)
+  crawlConcurrency  Int          @default(2)
+  allowedDomains    String[]     @default([])
+  documentSelectors Json?
+  lastCrawlAt       DateTime?
+  lastCrawlStatus   String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  crawlRuns         CrawlRun[]
+  documents         Document[]
+  snapshots         RawSnapshot[]
+
+  @@index([name])
+  @@index([enabled])
+  @@map("regulatory_sources")
+}
+
+model CrawlRun {
+  id              String         @id @default(uuid())
+  sourceId        String
+  status          CrawlRunStatus @default(PENDING)
+  startedAt       DateTime       @default(now())
+  completedAt     DateTime?
+  totalDiscovered Int            @default(0)
+  totalNew        Int            @default(0)
+  totalChanged    Int            @default(0)
+  totalFailed     Int            @default(0)
+  errorDetails    String?
+  triggeredBy     String         @default("MANUAL")
+
+  source          RegulatorySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  jobs            CrawlJob[]
+
+  @@index([sourceId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("crawl_runs")
+}
+
+model CrawlJob {
+  id           String    @id @default(uuid())
+  crawlRunId   String
+  jobType      String
+  url          String?
+  status       String    @default("PENDING")
+  attempts     Int       @default(0)
+  errorDetails String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  crawlRun     CrawlRun  @relation(fields: [crawlRunId], references: [id], onDelete: Cascade)
+
+  @@index([crawlRunId])
+  @@index([status])
+  @@map("crawl_jobs")
+}
+
+model RawSnapshot {
+  id              String    @id @default(uuid())
+  sourceId        String
+  sourceUrl       String
+  finalUrl        String
+  fetchTimestamp  DateTime
+  httpStatus      Int
+  contentType     String
+  headers         Json
+  rawChecksum     String
+  rawContent      String    @db.Text
+  parserVersion   String    @default("1.0.0")
+  adapterVersion  String    @default("1.0.0")
+  createdAt       DateTime  @default(now())
+
+  source          RegulatorySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  versions        DocumentVersion[]
+
+  @@index([sourceId])
+  @@index([rawChecksum])
+  @@index([sourceUrl])
+  @@map("raw_snapshots")
+}
+
+model Document {
+  id               String         @id @default(uuid())
+  canonicalId      String         @unique
+  title            String
+  documentNumber   String?
+  documentType     String?
+  issuingAuthority String?
+  issuingDate      DateTime?
+  publishedAt      DateTime?
+  effectiveAt      DateTime?
+  expiredAt        DateTime?
+  status           DocumentStatus @default(PUBLISHED)
+  sourceUrl        String
+  sourceId         String
+  latestVersionId  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  source           RegulatorySource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  versions         DocumentVersion[]
+  changeSets       ChangeSet[]
+
+  outboundRelations DocumentRelationship[] @relation("SourceDoc")
+  inboundRelations  DocumentRelationship[] @relation("TargetDoc")
+
+  @@index([canonicalId])
+  @@index([documentNumber])
+  @@index([status])
+  @@index([sourceId])
+  @@index([effectiveAt])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id                 String      @id @default(uuid())
+  documentId         String
+  versionNumber      Int
+  rawSnapshotId      String
+  rawChecksum        String
+  normalizedChecksum String
+  normalizedText     String      @db.Text
+  detectedAt         DateTime    @default(now())
+  effectiveFrom      DateTime?
+  effectiveUntil     DateTime?
+  parserVersion      String      @default("1.0.0")
+  createdAt          DateTime    @default(now())
+
+  document           Document    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  rawSnapshot        RawSnapshot @relation(fields: [rawSnapshotId], references: [id], onDelete: Cascade)
+  nodes              LegalNode[]
+
+  changeSetsAsPrevious ChangeSet[] @relation("PrevVersion")
+  changeSetsAsNew      ChangeSet[] @relation("NewVersion")
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId])
+  @@index([normalizedChecksum])
+  @@map("document_versions")
+}
+
+model LegalNode {
+  id            String        @id @default(uuid())
+  versionId     String
+  type          LegalNodeType
+  number        String?
+  title         String?
+  content       String        @db.Text
+  parentId      String?
+  orderIndex    Int
+  hierarchyPath String
+  metadata      Json?
+
+  version       DocumentVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  parent        LegalNode?      @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children      LegalNode[]     @relation("NodeHierarchy")
+
+  @@index([versionId])
+  @@index([versionId, hierarchyPath])
+  @@map("legal_nodes")
+}
+
+model ChangeSet {
+  id                String          @id @default(uuid())
+  documentId        String
+  previousVersionId String
+  newVersionId      String
+  detectedAt        DateTime        @default(now())
+  summary           String          @db.Text
+  status            ChangeSetStatus @default(DETECTED)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime        @default(now())
+
+  document          Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  previousVersion   DocumentVersion @relation("PrevVersion", fields: [previousVersionId], references: [id], onDelete: Cascade)
+  newVersion        DocumentVersion @relation("NewVersion", fields: [newVersionId], references: [id], onDelete: Cascade)
+  items             ChangeItem[]
+
+  @@unique([previousVersionId, newVersionId])
+  @@index([documentId])
+  @@index([status])
+  @@map("change_sets")
+}
+
+model ChangeItem {
+  id              String        @id @default(uuid())
+  changeSetId     String
+  nodeType        LegalNodeType
+  hierarchyPath   String
+  changeType      ChangeType
+  oldContent      String?       @db.Text
+  newContent      String?       @db.Text
+  oldNodeId       String?
+  newNodeId       String?
+  similarityScore Float?
+  diffFragments   Json?
+  metadata        Json?
+
+  changeSet       ChangeSet     @relation(fields: [changeSetId], references: [id], onDelete: Cascade)
+
+  @@index([changeSetId])
+  @@index([changeType])
+  @@map("change_items")
+}
+
+model DocumentRelationship {
+  id               String           @id @default(uuid())
+  sourceDocumentId String
+  targetDocumentId String
+  relationshipType RelationshipType
+  description      String?
+  createdAt        DateTime         @default(now())
+
+  sourceDocument   Document         @relation("SourceDoc", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  targetDocument   Document         @relation("TargetDoc", fields: [targetDocumentId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceDocumentId, targetDocumentId, relationshipType])
+  @@index([sourceDocumentId])
+  @@index([targetDocumentId])
+  @@map("document_relationships")
+}
+
+model WebhookEndpoint {
+  id          String            @id @default(uuid())
+  url         String
+  secret      String
+  description String?
+  events      String[]          @default([])
+  enabled     Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  deliveries  WebhookDelivery[]
+
+  @@index([enabled])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id           String          @id @default(uuid())
+  endpointId   String
+  eventType    String
+  payload      Json
+  httpStatus   Int?
+  attempts     Int             @default(0)
+  status       String          @default("PENDING")
+  responseBody String?
+  lastAttemptAt DateTime?
+  nextAttemptAt DateTime?
+  createdAt    DateTime        @default(now())
+
+  endpoint     WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId])
+  @@index([status])
+  @@map("webhook_deliveries")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorEmail String?
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorEmail])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

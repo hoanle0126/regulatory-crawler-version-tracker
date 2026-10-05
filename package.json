@@ -1,0 +1,27 @@
+{
+  "name": "regtracker-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Regulatory Crawler & Version Tracking System",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "test:unit": "pnpm -r run test:unit",
+    "test:integration": "pnpm --filter=api run test:integration",
+    "test:e2e": "pnpm --filter=api run test:e2e",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:migrate": "pnpm --filter=api run db:migrate",
+    "db:seed": "pnpm --filter=api run db:seed",
+    "db:studio": "pnpm --filter=api run db:studio",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2",
+    "prettier": "^3.4.2"
+  },
+  "packageManager": "pnpm@12.7.0"
+}

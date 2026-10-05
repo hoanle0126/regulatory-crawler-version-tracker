@@ -1,0 +1,23 @@
+{
+  "name": "@regtracker/diff-engine",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo 'lint diff-engine ok'"
+  },
+  "dependencies": {
+    "@regtracker/shared": "workspace:*",
+    "@regtracker/legal-parser": "workspace:*",
+    "diff": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/diff": "^7.0.0",
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

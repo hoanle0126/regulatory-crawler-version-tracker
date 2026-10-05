@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #090d16;
+  --surface: #0f172a;
+  --surface-border: #334155;
+}
+
+body {
+  color: #f8fafc;
+  background: var(--background);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for legal documents and diff viewer */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Diff Word Highlight Styles */
+.diff-added-word {
+  background-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.diff-removed-word {
+  background-color: rgba(244, 63, 94, 0.25);
+  color: #fda4af;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px -5px rgba(14, 165, 233, 0.3);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3);
+}
