@@ -12,6 +12,7 @@ import {
   Code,
   Copy,
   Check,
+  FileText,
 } from 'lucide-react';
 import { api } from '../../../lib/api-client';
 import { StatusBadge } from '../../../components/StatusBadge';
@@ -26,9 +27,9 @@ export default function DocumentDetailPage() {
   const [versions, setVersions] = useState<any[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState<string>('');
   const [structureNodes, setStructureNodes] = useState<any[]>([]);
-  const [relationships, setRelationships] = useState<{ outgoing: any[]; incoming: any[] }>({
-    outgoing: [],
-    incoming: [],
+  const [relationships, setRelationships] = useState<{ outbound: any[]; inbound: any[] }>({
+    outbound: [],
+    inbound: [],
   });
 
   // Compare selection
@@ -46,11 +47,14 @@ export default function DocumentDetailPage() {
       const [docData, versionsData, relData] = await Promise.all([
         api.getDocument(documentId),
         api.getDocumentVersions(documentId),
-        api.getDocumentRelationships(documentId),
+        api.getDocumentRelationships(documentId).catch(() => ({ outbound: [], inbound: [] })),
       ]);
       setDoc(docData);
-      setVersions(versionsData);
-      setRelationships(relData);
+      setVersions(versionsData || []);
+      setRelationships({
+        outbound: relData.outbound || [],
+        inbound: relData.inbound || [],
+      });
 
       if (versionsData.length > 0) {
         const latest = versionsData[versionsData.length - 1];
@@ -78,7 +82,17 @@ export default function DocumentDetailPage() {
     if (selectedVersionId) {
       api
         .getVersionStructure(selectedVersionId)
-        .then(setStructureNodes)
+        .then((res: any) => {
+          if (Array.isArray(res)) {
+            setStructureNodes(res);
+          } else if (res && Array.isArray(res.tree)) {
+            setStructureNodes(res.tree);
+          } else if (res && Array.isArray(res.flatNodes)) {
+            setStructureNodes(res.flatNodes);
+          } else {
+            setStructureNodes([]);
+          }
+        })
         .catch(() => setStructureNodes([]));
     }
   }, [selectedVersionId]);
@@ -123,146 +137,156 @@ export default function DocumentDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-12 text-center text-xs font-mono text-slate-500">Loading document details...</div>;
+    return (
+      <div className="p-16 text-center text-xs font-mono text-ink-muted">
+        Đang tải hồ sơ văn bản pháp quy...
+      </div>
+    );
   }
 
   if (!doc) {
-    return <div className="p-12 text-center text-xs font-mono text-rose-400">Document not found.</div>;
+    return (
+      <div className="p-16 text-center text-xs font-mono text-diff-delete-text">
+        Không tìm thấy hồ sơ văn bản.
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center justify-between">
+      {/* Action / Navigation Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rule-light">
         <Link
           href="/documents"
-          className="inline-flex items-center gap-1 text-xs font-mono text-slate-400 hover:text-sky-400 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-seal-primary transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Documents</span>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Quay lại Danh mục Văn bản</span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleCopyRagExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 hover:text-sky-400 hover:border-slate-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-paper-surface border border-rule-strong text-xs font-mono text-ink-primary hover:bg-paper-warm transition-colors"
           >
-            {ragCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{ragCopied ? 'RAG JSON Copied!' : 'Export RAG Contract'}</span>
+            {ragCopied ? <Check className="w-3.5 h-3.5 text-diff-insert-text" /> : <Copy className="w-3.5 h-3.5 text-ink-muted" />}
+            <span>{ragCopied ? 'Đã sao chép RAG JSON' : 'Xuất RAG Contract'}</span>
           </button>
 
           {versions.length >= 2 && (
             <Link
               href={`/documents/${doc.id}/compare?from=${fromVerId}&to=${toVerId}`}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-medium shadow-md shadow-sky-600/30 transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-seal-primary hover:bg-seal-secondary text-paper-base text-xs font-mono transition-colors"
             >
-              <GitCompare className="w-4 h-4" />
-              <span>Compare Versions</span>
+              <GitCompare className="w-3.5 h-3.5" />
+              <span>Đối chiếu Phiên bản</span>
             </Link>
           )}
         </div>
       </div>
 
-      {/* Main Metadata Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-slate-800">
-          <div className="space-y-1 max-w-3xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono text-sm font-bold text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800">
-                {doc.documentNumber || 'UNASSIGNED NUMBER'}
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                {doc.documentType || 'REGULATION'}
-              </span>
-              <StatusBadge status={doc.status} size="sm" />
+      {/* Main Metadata Docket */}
+      <div className="bg-paper-surface border border-rule-light">
+        <div className="p-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-rule-light">
+            <div className="space-y-2 max-w-3xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-xs font-bold px-2 py-0.5 bg-seal-primary text-paper-base border border-seal-primary">
+                  {doc.documentNumber || 'CHƯA CÓ SỐ HIỆU'}
+                </span>
+                <span className="text-xs px-2 py-0.5 bg-paper-warm text-ink-primary font-mono border border-rule-light">
+                  {doc.documentType || 'VĂN BẢN'}
+                </span>
+                <StatusBadge status={doc.status} size="sm" />
+              </div>
+
+              <h1 className="text-xl sm:text-2xl font-serif font-bold text-ink-primary tracking-tight leading-snug">
+                {doc.title}
+              </h1>
+
+              <p className="text-xs font-mono text-ink-muted">
+                Canonical ID: <span className="text-ink-primary select-all">{doc.canonicalId}</span>
+              </p>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans mt-2">
-              {doc.title}
-            </h1>
-
-            <p className="text-xs font-mono text-slate-400">
-              Canonical ID: <span className="text-slate-300">{doc.canonicalId}</span>
-            </p>
+            <div className="text-xs font-mono text-left md:text-right shrink-0 bg-paper-warm/50 p-3.5 border border-rule-light">
+              <span className="text-ink-muted block text-[10px] uppercase tracking-wider">Cơ quan Nguồn Giám sát</span>
+              <span className="text-ink-primary font-semibold font-serif block mt-0.5">{doc.source?.name}</span>
+              {doc.sourceUrl && (
+                <a
+                  href={doc.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-seal-primary hover:underline inline-flex items-center gap-1 mt-1 text-[11px]"
+                >
+                  <span>Mở liên kết gốc</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
           </div>
 
-          <div className="text-xs font-mono text-right shrink-0 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-            <span className="text-slate-500 block text-[10px]">MONITORED SOURCE</span>
-            <span className="text-slate-200 font-semibold">{doc.source?.name}</span>
-            {doc.sourceUrl && (
-              <a
-                href={doc.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sky-400 hover:underline flex items-center justify-end gap-1 mt-1 text-[11px]"
-              >
-                <span>Original Source URL</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Legal Dates Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-          <div>
-            <span className="text-slate-500 block text-[10px]">ISSUING AUTHORITY</span>
-            <span className="text-slate-200 font-semibold">{doc.issuingAuthority || '—'}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-[10px]">ISSUED DATE</span>
-            <span className="text-slate-200">{formatDate(doc.issuingDate)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-[10px]">EFFECTIVE DATE</span>
-            <span className="text-emerald-400 font-semibold">{formatDate(doc.effectiveAt)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-[10px]">EXPIRATION DATE</span>
-            <span className="text-slate-300">{formatDate(doc.expiredAt)}</span>
+          {/* Legal Dates Docket Table */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono bg-paper-warm/30 p-4 border border-rule-light">
+            <div>
+              <span className="text-ink-muted block text-[10px] uppercase tracking-wider">Cơ quan Ban hành</span>
+              <span className="text-ink-primary font-serif font-semibold mt-0.5 block">{doc.issuingAuthority || '—'}</span>
+            </div>
+            <div>
+              <span className="text-ink-muted block text-[10px] uppercase tracking-wider">Ngày Ban hành</span>
+              <span className="text-ink-primary mt-0.5 block">{formatDate(doc.issuingDate)}</span>
+            </div>
+            <div>
+              <span className="text-ink-muted block text-[10px] uppercase tracking-wider">Ngày Có hiệu lực</span>
+              <span className="text-ink-primary font-bold mt-0.5 block">{formatDate(doc.effectiveAt)}</span>
+            </div>
+            <div>
+              <span className="text-ink-muted block text-[10px] uppercase tracking-wider">Ngày Hết hiệu lực</span>
+              <span className="text-ink-muted mt-0.5 block">{formatDate(doc.expiredAt)}</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Flagship Version Selector & Comparison Launcher */}
       {versions.length >= 2 && (
-        <div className="bg-gradient-to-r from-sky-950/40 to-slate-900 border border-sky-900/40 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-paper-warm/70 border border-rule-strong p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-mono text-sky-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">
-              <GitCompare className="w-4 h-4" />
-              <span>Flagship Legal Diff Comparison</span>
+            <span className="text-xs font-mono text-seal-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <GitCompare className="w-4 h-4 text-seal-primary" />
+              <span>Đối chiếu Sai khác Văn bản (Legal Diff Docket)</span>
             </span>
-            <p className="text-xs text-slate-300">
-              Select two versions to run structural legal diffing with word-level highlight:
+            <p className="text-xs text-ink-muted">
+              Lựa chọn 2 phiên bản để kích hoạt công cụ phân tích diff phân cấp &amp; từ ngữ (word-level):
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="text-slate-400">Base:</span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="text-ink-muted">Gốc:</span>
               <select
                 value={fromVerId}
                 onChange={(e) => setFromVerId(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none"
+                className="px-2.5 py-1.5 bg-paper-surface border border-rule-strong text-ink-primary focus:outline-none"
               >
                 {versions.map((v) => (
                   <option key={v.id} value={v.id}>
-                    Version {v.versionNumber} ({formatDate(v.detectedAt)})
+                    Phiên bản {v.versionNumber} ({formatDate(v.detectedAt)})
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="text-slate-400">Target:</span>
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="text-ink-muted">Đích:</span>
               <select
                 value={toVerId}
                 onChange={(e) => setToVerId(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none"
+                className="px-2.5 py-1.5 bg-paper-surface border border-rule-strong text-ink-primary focus:outline-none"
               >
                 {versions.map((v) => (
                   <option key={v.id} value={v.id}>
-                    Version {v.versionNumber} ({formatDate(v.detectedAt)})
+                    Phiên bản {v.versionNumber} ({formatDate(v.detectedAt)})
                   </option>
                 ))}
               </select>
@@ -270,9 +294,9 @@ export default function DocumentDetailPage() {
 
             <Link
               href={`/documents/${doc.id}/compare?from=${fromVerId}&to=${toVerId}`}
-              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-medium shadow-md shadow-sky-600/30 transition-all flex items-center gap-1.5"
+              className="px-3.5 py-1.5 bg-seal-primary hover:bg-seal-secondary text-paper-base text-xs font-mono transition-colors flex items-center gap-1.5"
             >
-              <span>Launch Diff</span>
+              <span>Chạy So sánh</span>
               <GitCompare className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -283,60 +307,62 @@ export default function DocumentDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Version Timeline (1 Col) */}
         <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-sky-400" />
-              <span>Version History Timeline</span>
-            </h2>
+          <div className="bg-paper-surface border border-rule-light p-4 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-rule-light">
+              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-ink-primary flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-seal-primary" />
+                <span>Lịch sử Phiên bản ({versions.length})</span>
+              </h2>
+            </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {versions.map((ver) => {
                 const isSelected = selectedVersionId === ver.id;
                 return (
                   <div
                     key={ver.id}
                     onClick={() => setSelectedVersionId(ver.id)}
-                    className={`p-3.5 rounded-xl border text-xs font-mono cursor-pointer transition-all ${
+                    className={`p-3 border text-xs font-mono cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-sky-950/40 border-sky-500/60 shadow-md'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        ? 'bg-paper-warm border-seal-primary'
+                        : 'bg-paper-surface border-rule-light hover:border-rule-strong'
                     }`}
                   >
                     <div className="flex items-center justify-between font-bold mb-1">
-                      <span className={isSelected ? 'text-sky-400' : 'text-slate-200'}>
-                        Version {ver.versionNumber}
+                      <span className={isSelected ? 'text-seal-primary' : 'text-ink-primary'}>
+                        Phiên bản {ver.versionNumber}
                       </span>
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-ink-muted">
                         {formatDate(ver.detectedAt)}
                       </span>
                     </div>
 
-                    <div className="space-y-1 text-[11px] text-slate-400 mt-2">
+                    <div className="space-y-1 text-[11px] text-ink-muted mt-2">
                       <div className="flex items-center justify-between">
-                        <span>SHA-256 (Norm):</span>
-                        <span className="font-mono text-slate-300">
+                        <span>SHA-256:</span>
+                        <span className="font-mono text-ink-primary font-medium">
                           {truncateHash(ver.normalizedChecksum, 10)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Parser Version:</span>
-                        <span className="text-slate-400">{ver.parserVersion}</span>
+                        <span>Parser:</span>
+                        <span className="text-ink-secondary">{ver.parserVersion}</span>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <div className="mt-2.5 pt-2 border-t border-rule-light flex items-center justify-between">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleViewSnapshot(ver.id);
                         }}
-                        className="text-[11px] text-sky-400 hover:underline flex items-center gap-1"
+                        className="text-[11px] text-seal-primary hover:underline flex items-center gap-1"
                       >
                         <Code className="w-3 h-3" />
-                        <span>Raw Snapshot</span>
+                        <span>Xem Snapshot Gốc</span>
                       </button>
                       {isSelected && (
-                        <span className="text-[10px] text-sky-400 font-semibold">Active Tree</span>
+                        <span className="text-[10px] text-seal-primary font-semibold uppercase">Đang hiển thị</span>
                       )}
                     </div>
                   </div>
@@ -346,37 +372,41 @@ export default function DocumentDetailPage() {
           </div>
 
           {/* Legal Relationships Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-indigo-400" />
-              <span>Legal Relationships</span>
+          <div className="bg-paper-surface border border-rule-light p-4 space-y-3">
+            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-ink-primary flex items-center gap-1.5 pb-2 border-b border-rule-light">
+              <Share2 className="w-3.5 h-3.5 text-seal-primary shrink-0" />
+              <span className="whitespace-nowrap">Quan hệ Pháp lý</span>
             </h2>
 
-            {relationships.outgoing.length === 0 && relationships.incoming.length === 0 ? (
-              <p className="text-xs font-mono text-slate-500">
-                No cross-regulation relationships registered.
+            {(!relationships?.outbound?.length && !relationships?.inbound?.length) ? (
+              <p className="text-xs font-mono text-ink-muted py-2">
+                Chưa có quan hệ pháp lý liên văn bản.
               </p>
             ) : (
               <div className="space-y-2 text-xs font-mono">
-                {relationships.outgoing.map((rel: any) => (
-                  <div key={rel.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-amber-400 font-bold mr-2">{rel.relationshipType}</span>
+                {relationships.outbound?.map((rel: any) => (
+                  <div key={rel.id} className="p-2.5 bg-paper-warm/50 border border-rule-light">
+                    <span className="font-bold text-seal-primary mr-2 uppercase text-[10px] tracking-wider block sm:inline whitespace-nowrap">
+                      {rel.relationshipType}
+                    </span>
                     <Link
                       href={`/documents/${rel.targetDocumentId}`}
-                      className="text-slate-200 hover:text-sky-400 underline font-sans"
+                      className="text-ink-primary hover:text-seal-primary underline font-serif"
                     >
-                      {rel.targetDocument?.documentNumber || 'Target Document'}
+                      {rel.targetDocument?.documentNumber || 'Văn bản Đích'}
                     </Link>
                   </div>
                 ))}
-                {relationships.incoming.map((rel: any) => (
-                  <div key={rel.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-purple-400 font-bold mr-2">IS {rel.relationshipType} BY</span>
+                {relationships.inbound?.map((rel: any) => (
+                  <div key={rel.id} className="p-2.5 bg-paper-warm/50 border border-rule-light">
+                    <span className="font-bold text-ink-secondary mr-2 uppercase text-[10px] tracking-wider block sm:inline whitespace-nowrap">
+                      ĐƯỢC {rel.relationshipType} BỞI
+                    </span>
                     <Link
                       href={`/documents/${rel.sourceDocumentId}`}
-                      className="text-slate-200 hover:text-sky-400 underline font-sans"
+                      className="text-ink-primary hover:text-seal-primary underline font-serif"
                     >
-                      {rel.sourceDocument?.documentNumber || 'Source Document'}
+                      {rel.sourceDocument?.documentNumber || 'Văn bản Nguồn'}
                     </Link>
                   </div>
                 ))}
@@ -393,36 +423,36 @@ export default function DocumentDetailPage() {
 
       {/* Snapshot Modal */}
       {showSnapshotModal && snapshotData && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 bg-ink-primary/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-paper-surface border border-rule-strong max-w-3xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col shadow-lg">
+            <div className="flex items-center justify-between pb-3 border-b border-rule-light">
               <div>
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Code className="w-4 h-4 text-sky-400" />
-                  <span>Immutable Raw Source Snapshot</span>
+                <h3 className="text-sm font-serif font-bold text-ink-primary flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-seal-primary" />
+                  <span>Snapshot Dữ liệu Gốc (Immutable Archival Record)</span>
                 </h3>
-                <span className="text-xs font-mono text-slate-400 block mt-0.5">
+                <span className="text-xs font-mono text-ink-muted block mt-0.5">
                   MIME: {snapshotData.mimeType} | Checksum: {truncateHash(snapshotData.contentChecksum, 16)}
                 </span>
               </div>
               <button
                 onClick={() => setShowSnapshotModal(false)}
-                className="text-slate-400 hover:text-white text-sm"
+                className="text-ink-muted hover:text-ink-primary text-base font-mono px-2"
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+            <div className="flex-1 overflow-y-auto bg-paper-warm/60 p-4 border border-rule-light font-mono text-xs text-ink-primary whitespace-pre-wrap leading-relaxed">
               {snapshotData.rawContent}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2 border-t border-rule-light">
               <button
                 onClick={() => setShowSnapshotModal(false)}
-                className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs font-mono hover:bg-slate-700"
+                className="px-4 py-1.5 bg-paper-surface border border-rule-strong text-ink-primary text-xs font-mono hover:bg-paper-warm"
               >
-                Close Snapshot
+                Đóng
               </button>
             </div>
           </div>

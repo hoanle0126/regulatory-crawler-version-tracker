@@ -3,9 +3,9 @@ import './globals.css';
 import { Navbar } from '../components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'RegTracker — Regulatory Crawler & Version Tracking System',
+  title: 'RegTracker — Hệ thống Giám sát & Truy vết Quy định Pháp luật',
   description:
-    'Enterprise regulatory monitoring, Vietnamese legal structure parsing, structural diff engine, and version tracking for compliance and legal AI systems.',
+    'Hệ thống giám sát văn bản quy phạm pháp luật, phân tích cấu trúc điều khoản (Phần, Chương, Mục, Điều, Khoản, Điểm) và so sánh phiên bản tự động.',
 };
 
 export default function RootLayout({
@@ -14,16 +14,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className="dark">
-      <body className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-sky-500/30 selection:text-sky-200">
+    <html lang="vi">
+      <body className="min-h-screen bg-[#f8f6f0] text-ink-900 flex flex-col font-sans selection:bg-[#e8decb] selection:text-[#141311]">
         <Navbar />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>
-        <footer className="border-t border-slate-800 bg-[#090d16] py-6 text-center text-xs text-slate-500 font-mono">
+        <footer className="border-t border-rule bg-[#f3efe6] py-6 text-xs text-ink-600 font-mono">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>RegTracker • Regulatory Intelligence &amp; Version Tracking System</span>
-            <span>Isolated Environment — Portfolio Project Demo</span>
+            <span className="font-serif italic text-ink-700">
+              RegTracker • Hệ thống Giám sát &amp; So chiếu Căn cứ Pháp lý
+            </span>
+            <span className="text-[11px] text-ink-500 uppercase tracking-widest">
+              Phiên bản độc lập • Bàn làm việc phân tích thể chế
+            </span>
           </div>
         </footer>
       </body>

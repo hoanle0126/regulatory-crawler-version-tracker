@@ -59,23 +59,23 @@ export default function CompareVersionsPage() {
 
   if (loading) {
     return (
-      <div className="p-16 text-center text-xs font-mono text-slate-400 space-y-3">
-        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-sky-400" />
-        <p>Executing structural legal diff algorithm...</p>
+      <div className="p-16 text-center text-xs font-mono text-ink-muted space-y-3">
+        <RefreshCw className="w-5 h-5 animate-spin mx-auto text-seal-primary" />
+        <p>Đang chạy thuật toán phân tích sai khác cấu trúc pháp lý (LCS / Tree Diff)...</p>
       </div>
     );
   }
 
   if (error || !diffResult) {
     return (
-      <div className="p-12 text-center text-xs font-mono text-rose-400 space-y-4">
-        <p>Failed to compare versions: {error || 'No comparison data available'}</p>
+      <div className="p-12 text-center text-xs font-mono text-diff-delete-text space-y-4 bg-paper-surface border border-rule-light max-w-xl mx-auto my-8">
+        <p>Không thể tải dữ liệu so sánh phiên bản: {error || 'Chưa có thông tin đối chiếu'}</p>
         <Link
           href={`/documents/${documentId}`}
-          className="inline-flex items-center gap-1 text-sky-400 hover:underline"
+          className="inline-flex items-center gap-1.5 text-seal-primary hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Return to Document</span>
+          <span>Quay lại Hồ sơ Văn bản</span>
         </Link>
       </div>
     );
@@ -86,23 +86,23 @@ export default function CompareVersionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header & Version Docket */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-rule-light">
         <Link
           href={`/documents/${documentId}`}
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-sky-400 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-seal-primary transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to {document?.documentNumber || 'Document'}</span>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Quay lại {document?.documentNumber || 'Hồ sơ Văn bản'}</span>
         </Link>
 
-        {/* Dynamic Version Selector */}
-        <div className="flex items-center gap-2 text-xs font-mono bg-slate-900 p-2 rounded-xl border border-slate-800">
-          <span className="text-slate-400 text-[11px]">Compare:</span>
+        {/* Dynamic Version Selector Docket */}
+        <div className="flex items-center gap-2 text-xs font-mono bg-paper-surface p-2 border border-rule-strong">
+          <span className="text-ink-muted text-[11px] uppercase tracking-wider font-bold">Đối chiếu:</span>
           <select
             value={fromVersionId || ''}
             onChange={(e) => handleVersionChange(e.target.value, toVersionId || '')}
-            className="px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none"
+            className="px-2 py-1 bg-paper-warm/50 border border-rule-light text-ink-primary font-mono focus:outline-none"
           >
             {versions.map((v) => (
               <option key={v.id} value={v.id}>
@@ -111,12 +111,12 @@ export default function CompareVersionsPage() {
             ))}
           </select>
 
-          <span className="text-slate-500">→</span>
+          <span className="text-ink-muted font-bold">→</span>
 
           <select
             value={toVersionId || ''}
             onChange={(e) => handleVersionChange(fromVersionId || '', e.target.value)}
-            className="px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none"
+            className="px-2 py-1 bg-paper-warm/50 border border-rule-light text-ink-primary font-mono focus:outline-none"
           >
             {versions.map((v) => (
               <option key={v.id} value={v.id}>
@@ -127,17 +127,17 @@ export default function CompareVersionsPage() {
         </div>
       </div>
 
-      {/* Flagship Diff Viewer */}
+      {/* Flagship Diff Viewer (Editorial Redline Docket) */}
       <DiffViewer
         fromVersionNumber={fromVer?.versionNumber ?? 1}
         toVersionNumber={toVer?.versionNumber ?? 2}
         summary={{
-          addedCount: diffResult.summary?.addedProvisions ?? diffResult.changeItems?.filter((i: any) => i.changeType === 'ADDED').length ?? 0,
-          modifiedCount: diffResult.summary?.modifiedProvisions ?? diffResult.changeItems?.filter((i: any) => i.changeType === 'MODIFIED').length ?? 0,
-          removedCount: diffResult.summary?.removedProvisions ?? diffResult.changeItems?.filter((i: any) => i.changeType === 'REMOVED').length ?? 0,
+          addedCount: diffResult.summary?.addedCount ?? diffResult.summary?.addedProvisions ?? (diffResult.changes || []).filter((i: any) => i.changeType === 'ADDED').length,
+          modifiedCount: diffResult.summary?.modifiedCount ?? diffResult.summary?.modifiedProvisions ?? (diffResult.changes || []).filter((i: any) => i.changeType === 'MODIFIED').length,
+          removedCount: diffResult.summary?.removedCount ?? diffResult.summary?.removedProvisions ?? (diffResult.changes || []).filter((i: any) => i.changeType === 'REMOVED').length,
           textSummary: diffResult.summary?.textSummary,
         }}
-        changeItems={diffResult.changeItems || []}
+        changeItems={diffResult.changes || diffResult.changeItems || []}
         documentTitle={document?.title}
         documentNumber={document?.documentNumber}
       />

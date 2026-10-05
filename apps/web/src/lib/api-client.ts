@@ -213,7 +213,13 @@ class ApiClient {
   }
 
   async getDocumentRelationships(id: string) {
-    return this.request<{ outgoing: any[]; incoming: any[] }>(`/documents/${id}/relationships`);
+    const res = await this.request<any>(`/documents/${id}/relationships`);
+    return {
+      outgoing: res?.outgoing || res?.outbound || [],
+      incoming: res?.incoming || res?.inbound || [],
+      outbound: res?.outbound || res?.outgoing || [],
+      inbound: res?.inbound || res?.incoming || [],
+    };
   }
 
   async addDocumentRelationship(id: string, data: { targetDocumentId: string; relationshipType: string; notes?: string }) {

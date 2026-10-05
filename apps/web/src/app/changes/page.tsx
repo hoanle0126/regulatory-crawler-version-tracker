@@ -6,8 +6,8 @@ import {
   GitCompare,
   Filter,
   Search,
-  Sparkles,
   ChevronRight,
+  FileCheck2,
 } from 'lucide-react';
 import { api } from '../../lib/api-client';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -46,7 +46,7 @@ export default function ChangesPage() {
       await api.updateChangeStatus(id, newStatus);
       await loadChanges();
     } catch (err: any) {
-      alert(`Failed to update change status: ${err.message}`);
+      alert(`Không thể cập nhật trạng thái: ${err.message}`);
     } finally {
       setActionLoadingId(null);
     }
@@ -55,20 +55,18 @@ export default function ChangesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <GitCompare className="w-6 h-6 text-amber-400" />
-            <span>Regulatory Change Feed</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1 font-mono">
-            Track and review clause-level modifications, newly introduced articles, and repealed legal provisions.
-          </p>
-        </div>
+      <div className="border-b border-rule-light pb-4">
+        <h1 className="text-2xl font-serif font-bold text-ink-primary flex items-center gap-2.5">
+          <GitCompare className="w-5 h-5 text-seal-primary" />
+          <span>Nhật ký Biến động Quy chuẩn</span>
+        </h1>
+        <p className="text-xs text-ink-muted mt-1 font-mono">
+          Theo dõi và thẩm định biến động điều khoản, bổ sung nội dung mới hoặc bãi bỏ quy chuẩn pháp lý.
+        </p>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="bg-paper-surface border border-rule-light p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -76,41 +74,41 @@ export default function ChangesPage() {
           }}
           className="relative flex-1 max-w-md"
         >
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+          <Search className="w-3.5 h-3.5 text-ink-muted absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search changes by regulation title or summary..."
+            placeholder="Tìm biến động theo tên văn bản hoặc tóm tắt..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            className="w-full pl-9 pr-3 py-1.5 bg-paper-warm/50 border border-rule-light text-xs font-mono text-ink-primary placeholder-ink-muted focus:outline-none focus:border-seal-primary"
           />
         </form>
 
         <div className="flex items-center gap-2 text-xs font-mono">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
+          <Filter className="w-3.5 h-3.5 text-ink-muted" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 focus:outline-none"
+            className="px-2.5 py-1.5 bg-paper-surface border border-rule-strong text-ink-primary focus:outline-none"
           >
-            <option value="">All Review Statuses</option>
-            <option value="DETECTED">DETECTED (Unreviewed)</option>
-            <option value="REVIEWED">REVIEWED</option>
-            <option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
-            <option value="IGNORED">IGNORED</option>
+            <option value="">Tất cả trạng thái thẩm định</option>
+            <option value="DETECTED">MỚI PHÁT HIỆN (Chưa thẩm định)</option>
+            <option value="REVIEWED">ĐÃ THẨM ĐỊNH (Reviewed)</option>
+            <option value="ACKNOWLEDGED">ĐÃ GHI NHẬN TÁC ĐỘNG</option>
+            <option value="IGNORED">BỎ QUA (Không liên quan)</option>
           </select>
         </div>
       </div>
 
       {/* Changes Feed List */}
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         {loading ? (
-          <div className="p-12 text-center text-xs font-mono text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl">
-            Loading regulatory changes...
+          <div className="p-12 text-center text-xs font-mono text-ink-muted bg-paper-surface border border-rule-light">
+            Đang tải dữ liệu biến động văn bản...
           </div>
         ) : changes.length === 0 ? (
-          <div className="p-12 text-center text-xs font-mono text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl">
-            No regulatory changes match your current filters.
+          <div className="p-12 text-center text-xs font-mono text-ink-muted bg-paper-surface border border-rule-light">
+            Không tìm thấy biến động pháp lý nào phù hợp tiêu chí tra cứu.
           </div>
         ) : (
           changes.map((change) => {
@@ -118,42 +116,42 @@ export default function ChangesPage() {
             return (
               <div
                 key={change.id}
-                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-lg transition-all space-y-3"
+                className="bg-paper-surface border border-rule-light hover:border-rule-strong p-4 transition-colors space-y-3"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-rule-light/70">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <StatusBadge status={change.status} type="changeset" size="sm" />
-                    <span className="text-[11px] font-mono text-slate-500">
-                      Detected: {formatDate(change.detectedAt)}
+                    <span className="text-[11px] font-mono text-ink-muted">
+                      Phát hiện: {formatDate(change.detectedAt)}
                     </span>
                   </div>
 
                   {/* Review Actions */}
                   <div className="flex items-center gap-1.5 text-xs font-mono">
-                    <span className="text-slate-500 text-[11px] mr-1">Review:</span>
+                    <span className="text-ink-muted text-[10px] uppercase tracking-wider mr-1">Thao tác:</span>
                     <button
                       onClick={() => handleUpdateStatus(change.id, 'REVIEWED')}
                       disabled={isLoading}
-                      title="Mark as Reviewed"
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 text-[11px] transition-colors"
+                      title="Đánh dấu Đã thẩm định"
+                      className="px-2.5 py-1 bg-paper-surface hover:bg-paper-warm text-seal-primary border border-rule-strong text-[11px] transition-colors"
                     >
-                      Reviewed
+                      Đã thẩm định
                     </button>
                     <button
                       onClick={() => handleUpdateStatus(change.id, 'ACKNOWLEDGED')}
                       disabled={isLoading}
-                      title="Acknowledge Compliance Impact"
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-[11px] transition-colors"
+                      title="Ghi nhận tác động tuân thủ"
+                      className="px-2.5 py-1 bg-paper-surface hover:bg-paper-warm text-diff-insert-text border border-rule-strong text-[11px] transition-colors"
                     >
-                      Acknowledge
+                      Ghi nhận
                     </button>
                     <button
                       onClick={() => handleUpdateStatus(change.id, 'IGNORED')}
                       disabled={isLoading}
-                      title="Ignore Change"
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[11px] transition-colors"
+                      title="Bỏ qua biến động"
+                      className="px-2.5 py-1 bg-paper-surface hover:bg-paper-warm text-ink-muted border border-rule-strong text-[11px] transition-colors"
                     >
-                      Ignore
+                      Bỏ qua
                     </button>
                   </div>
                 </div>
@@ -161,24 +159,24 @@ export default function ChangesPage() {
                 <div>
                   <Link
                     href={`/documents/${change.documentId}/compare?from=${change.previousVersionId}&to=${change.newVersionId}`}
-                    className="text-base font-bold text-slate-100 hover:text-sky-400 transition-colors font-sans block"
+                    className="text-base font-serif font-bold text-ink-primary hover:text-seal-primary transition-colors block"
                   >
                     {change.document?.documentNumber ? `${change.document.documentNumber}: ` : ''}
-                    {change.document?.title || 'Regulatory Document'}
+                    {change.document?.title || 'Văn bản Quy chuẩn'}
                   </Link>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs font-mono text-slate-300 flex items-center justify-between gap-4">
+                <div className="p-3 bg-paper-warm/50 border border-rule-light text-xs font-mono text-ink-secondary flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-                    <span>{change.summary}</span>
+                    <FileCheck2 className="w-4 h-4 text-seal-primary shrink-0" />
+                    <span className="leading-relaxed">{change.summary}</span>
                   </div>
 
                   <Link
                     href={`/documents/${change.documentId}/compare?from=${change.previousVersionId}&to=${change.newVersionId}`}
-                    className="text-sky-400 hover:underline flex items-center gap-1 shrink-0 font-semibold"
+                    className="text-seal-primary hover:underline flex items-center gap-1 shrink-0 font-bold uppercase text-[11px] tracking-wider"
                   >
-                    <span>Inspect Provision Diff</span>
+                    <span>Xem Redline Sai khác</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>

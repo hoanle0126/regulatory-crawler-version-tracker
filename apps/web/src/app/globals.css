@@ -3,62 +3,64 @@
 @tailwind utilities;
 
 :root {
-  --background: #090d16;
-  --surface: #0f172a;
-  --surface-border: #334155;
+  --background: #f8f6f0;
+  --foreground: #1e1c18;
+  --panel: #fdfdfc;
+  --panel-muted: #f2eee5;
+  --rule: #e2ddd2;
+  --rule-strong: #ccc6b8;
 }
 
 body {
-  color: #f8fafc;
+  color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Scrollbar for legal documents and diff viewer */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #f4efe6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #d8d2c3;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #b5ad9a;
 }
 
-/* Diff Word Highlight Styles */
+/* Diff Word Highlight Styles (Letterpress Editorial Style) */
 .diff-added-word {
-  background-color: rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
-  padding: 0.1rem 0.25rem;
-  border-radius: 0.2rem;
-  font-weight: 500;
+  background-color: #edf6ee;
+  color: #166534;
+  padding: 0.05rem 0.2rem;
+  border-radius: 1px;
+  font-weight: 600;
+  border-bottom: 1.5px solid #86efac;
   text-decoration: none;
 }
 
 .diff-removed-word {
-  background-color: rgba(244, 63, 94, 0.25);
-  color: #fda4af;
-  padding: 0.1rem 0.25rem;
-  border-radius: 0.2rem;
+  background-color: #fdf2f2;
+  color: #991b1b;
+  padding: 0.05rem 0.2rem;
+  border-radius: 1px;
   font-weight: 500;
+  border-bottom: 1.5px solid #fca5a5;
   text-decoration: line-through;
 }
 
-/* Glow effects */
-.glow-primary {
-  box-shadow: 0 0 20px -5px rgba(14, 165, 233, 0.3);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3);
+/* Selection style */
+::selection {
+  background-color: #e8decb;
+  color: #141311;
 }

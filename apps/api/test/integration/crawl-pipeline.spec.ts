@@ -24,6 +24,9 @@ describe('End-to-End Crawl, Versioning, and Diff Pipeline (Prompt Sections 5, 18
     crawlProcessor = new CrawlProcessor(prisma as any, mockWebhooksService);
 
     // Clean up previous test artifacts
+    await prisma.document.deleteMany({
+      where: { canonicalId: 'doc:01-2026-tt-demo' },
+    });
     await prisma.regulatorySource.deleteMany({
       where: { name: 'Integration Test Mock Source' },
     });

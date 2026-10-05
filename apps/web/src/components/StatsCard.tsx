@@ -21,41 +21,41 @@ export function StatsCard({
   variant = 'default',
 }: StatsCardProps) {
   const borderVariants = {
-    default: 'border-slate-800 hover:border-slate-700',
-    success: 'border-emerald-900/60 hover:border-emerald-700/80',
-    warning: 'border-amber-900/60 hover:border-amber-700/80',
-    danger: 'border-rose-900/60 hover:border-rose-700/80',
+    default: 'border-[#ded7c8] hover:border-[#193354]',
+    success: 'border-[#bbf7d0] hover:border-[#86efac]',
+    warning: 'border-[#fde68a] hover:border-[#fcd34d]',
+    danger: 'border-[#fecaca] hover:border-[#f87171]',
   };
 
   return (
     <div
       className={cn(
-        'bg-slate-900/80 rounded-xl p-5 border transition-all duration-200 backdrop-blur-sm',
+        'bg-[#fdfdfc] p-5 border transition-all duration-150 relative shadow-[0_1px_2px_rgba(0,0,0,0.02)]',
         borderVariants[variant]
       )}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+      <div className="flex items-center justify-between pb-2 border-b border-[#f0ebd9] gap-2">
+        <span className="text-[11px] font-sans font-semibold text-ink-600 uppercase tracking-wider whitespace-nowrap truncate">
           {title}
         </span>
-        {icon && <div className="text-slate-400">{icon}</div>}
+        {icon && <div className="text-ink-500 shrink-0">{icon}</div>}
       </div>
 
-      <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-3xl font-semibold text-slate-100 font-mono tracking-tight">
+      <div className="mt-3 flex items-baseline gap-2.5">
+        <span className="text-3xl font-serif font-bold text-ink-950 tracking-tight whitespace-nowrap">
           {value}
         </span>
         {badge && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-[#f2eee5] border border-[#ded7c8] text-ink-700 font-medium whitespace-nowrap shrink-0">
             {badge}
           </span>
         )}
       </div>
 
       {(subtext || trend) && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-          {trend && <span className="text-emerald-400 font-medium">{trend}</span>}
-          {subtext && <span>{subtext}</span>}
+        <div className="mt-2.5 flex items-center gap-2 text-xs text-ink-600">
+          {trend && <span className="text-[#166534] font-medium font-mono">{trend}</span>}
+          {subtext && <span className="font-serif italic text-ink-500">{subtext}</span>}
         </div>
       )}
     </div>
